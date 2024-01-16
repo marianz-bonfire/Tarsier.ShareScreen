@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34322.80
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tarsier.ShareScreen", "Tarsier.ShareScreen\Tarsier.ShareScreen.csproj", "{8EF464CF-4D15-4F36-BDA6-3D9BB98771D5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tarsier.ShareScreen.Core", "Tarsier.ShareScreen.Core\Tarsier.ShareScreen.Core.csproj", "{DCC46F8B-8FAE-45B4-A65D-1C265C4FDEFD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8EF464CF-4D15-4F36-BDA6-3D9BB98771D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EF464CF-4D15-4F36-BDA6-3D9BB98771D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EF464CF-4D15-4F36-BDA6-3D9BB98771D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EF464CF-4D15-4F36-BDA6-3D9BB98771D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCC46F8B-8FAE-45B4-A65D-1C265C4FDEFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCC46F8B-8FAE-45B4-A65D-1C265C4FDEFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCC46F8B-8FAE-45B4-A65D-1C265C4FDEFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCC46F8B-8FAE-45B4-A65D-1C265C4FDEFD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4E988412-34B3-4220-B2C9-3A9F0AACE21D}
+	EndGlobalSection
+EndGlobal
