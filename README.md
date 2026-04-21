@@ -54,7 +54,7 @@ A powerful Windows desktop application for streaming screen, monitors, applicati
 
 2. **Build from Source**:
    ```bash
-   git clone https://github.com/yourusername/Tarsier.ShareScreen.git
+   git clone https://github.com/marianz-bonfire/Tarsier.ShareScreen.git
    cd Tarsier.ShareScreen
    msbuild Tarsier.ShareScreen.sln /p:Configuration=Release
    ```
