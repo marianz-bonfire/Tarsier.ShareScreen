@@ -79,5 +79,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Tarsier.ShareScreen.Core\Tarsier.ShareScreen.Core.csproj">
+      <Project>{dcc46f8b-8fae-45b4-a65d-1c265c4fdefd}</Project>
+      <Name>Tarsier.ShareScreen.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

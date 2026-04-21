@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 using Tarsier.ShareScreen.Core.Constants;
 using Tarsier.ShareScreen.Core.Enumerations;
 using Tarsier.ShareScreen.Core.Extensions;
 using Tarsier.ShareScreen.Core.NativeAPI;
-using Tarsier.ShareScreen.Core.Webcam.DirectX;
-using static Tarsier.ShareScreen.Core.Webcam.DirectShow.Uuid;
+using Tarsier.ShareScreen.Core.Snapshots.Webcam;
 
 namespace Tarsier.ShareScreen.Core.Snapshots
 {
@@ -18,11 +18,8 @@ namespace Tarsier.ShareScreen.Core.Snapshots
     public static class Screenshot
     {
         /// <summary>
-        /// Provides enumeration of screenshots.
+        /// Provides enumeration of screenshots from the primary screen.
         /// </summary>
-        /// <param name="requiredResolution">Required screenshot resolution.</param>
-        /// <param name="showCursor">Whether to display the cursor in screenshots.</param>
-        /// <returns>Enumeration of screenshots.</returns>
         public static IEnumerable<Image> DesktopScreen(ScreenResolution requiredResolution, bool showCursor) {
             var screenSize = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
             var requiredSize = requiredResolution.GetResolutionSize();
@@ -58,42 +55,94 @@ namespace Tarsier.ShareScreen.Core.Snapshots
             }
         }
 
-        private static Image CapturePreviewImage { get; set; }
+        /// <summary>
+        /// Provides enumeration of screenshots from a specific monitor by index.
+        /// </summary>
+        /// <param name="screenIndex">Zero-based index into Screen.AllScreens.</param>
+        /// <param name="requiredResolution">Required screenshot resolution.</param>
+        /// <param name="showCursor">Whether to display the cursor in screenshots.</param>
+        public static IEnumerable<Image> MonitorScreen(int screenIndex, ScreenResolution requiredResolution, bool showCursor) {
+            var screens = Screen.AllScreens;
+            if (screenIndex < 0 || screenIndex >= screens.Length) {
+                screenIndex = 0;
+            }
+
+            var screen = screens[screenIndex];
+            var bounds = screen.Bounds;
+            var screenSize = new Size(bounds.Width, bounds.Height);
+            var requiredSize = requiredResolution.GetResolutionSize();
+
+            var rawImage = new Bitmap(screenSize.Width, screenSize.Height);
+            var rawGraphics = Graphics.FromImage(rawImage);
+
+            bool isNeedToScale = screenSize != requiredSize;
+
+            var image = rawImage;
+            var graphics = rawGraphics;
+
+            if (isNeedToScale) {
+                image = new Bitmap(requiredSize.Width, requiredSize.Height);
+                graphics = Graphics.FromImage(image);
+            }
+
+            var source = new Rectangle(0, 0, screenSize.Width, screenSize.Height);
+            var destination = new Rectangle(0, 0, requiredSize.Width, requiredSize.Height);
+
+            while (true) {
+                rawGraphics.CopyFromScreen(bounds.X, bounds.Y, 0, 0, screenSize);
+
+                if (showCursor) {
+                    AddCursorToScreenshot(rawGraphics, new Rectangle(bounds.X, bounds.Y, screenSize.Width, screenSize.Height));
+                }
+
+                if (isNeedToScale) {
+                    graphics.DrawImage(rawImage, destination, source, GraphicsUnit.Pixel);
+                }
+
+                yield return image;
+            }
+        }
 
         /// <summary>
-        /// Provides enumeration of captured images from Webcamera.
+        /// Provides enumeration of captured images from a webcam using headless DirectShow capture.
         /// </summary>
-        /// <param name="requiredResolution">Required screenshot resolution.</param>
-        /// <returns>Enumeration of camera captured images.</returns>
-        public static IEnumerable<Image> WebCamera() {
-            FilterCollection videoDevices = new FilterCollection(FilterCategory.VideoInputDevice);
-            if (videoDevices.Count > 0) {
-                CaptureWebcam camera = new CaptureWebcam(new Filter(videoDevices[0].MonikerString));
-                camera.CaptureFrameEvent += (bitmap) => {
-                    CapturePreviewImage = bitmap;
-                };
-                camera.StartPreview();
-                while (true) {
-                    CapturePreviewImage = camera.GetFrame();
-                    //camera.PrepareCapture();
-                    if (CapturePreviewImage != null) {
-                        yield return CapturePreviewImage;
-                    } else {
+        /// <param name="deviceMonikerString">The moniker string of the webcam device, or null for the first available device.</param>
+        public static IEnumerable<Image> WebCamera(string deviceMonikerString = null) {
+            HeadlessWebcamCapture capture = null;
+            try {
+                // Find a device if none specified
+                if (string.IsNullOrEmpty(deviceMonikerString)) {
+                    var devices = HeadlessWebcamCapture.GetAvailableDevices();
+                    if (devices.Length == 0) {
+                        yield return PredefinedImage.Default();
+                        yield break;
+                    }
+                    deviceMonikerString = devices[0].MonikerString;
+                }
 
+                capture = new HeadlessWebcamCapture(deviceMonikerString);
+                capture.Start();
+
+                // Give the camera a moment to initialize
+                Thread.Sleep(500);
+
+                while (true) {
+                    var frame = capture.GetFrame();
+                    if (frame != null) {
+                        yield return frame;
+                        frame.Dispose();
+                    } else {
                         yield return PredefinedImage.Default();
                     }
                 }
-            } else {
-                yield return PredefinedImage.Default();
+            } finally {
+                capture?.Dispose();
             }
         }
 
         /// <summary>
         /// Provides enumeration of screenshots of a specific application window.
         /// </summary>
-        /// <param name="applicationName">The title of the main application window.</param>
-        /// <param name="showCursor">Whether to display the cursor in screenshots.</param>
-        /// <returns>Enumeration of screenshots of a specific application window.</returns>
         public static IEnumerable<Image> AppWindow(string applicationName, bool showCursor) {
             var windowHandle = ApplicationWindow.FindWindow(null, applicationName);
 
@@ -134,8 +183,6 @@ namespace Tarsier.ShareScreen.Core.Snapshots
         /// <summary>
         /// Adds a cursor to a screenshot.
         /// </summary>
-        /// <param name="graphics">Drawing surface.</param>
-        /// <param name="bounds">Screen bounds.</param>
         private static void AddCursorToScreenshot(Graphics graphics, Rectangle bounds) {
             if (graphics == null) {
                 throw new ArgumentNullException(nameof(graphics));

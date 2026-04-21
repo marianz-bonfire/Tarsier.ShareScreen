@@ -81,6 +81,7 @@
     <Compile Include="Snapshots\Webcam\DirectX\Filter.cs" />
     <Compile Include="Snapshots\Webcam\DirectX\FilterCollection.cs" />
     <Compile Include="Snapshots\Webcam\DirectX\Filters.cs" />
+    <Compile Include="Snapshots\Webcam\HeadlessWebcamCapture.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -100,6 +101,11 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\Tarsier.ShareScreen.DirectX.Capture\Tarsier.ShareScreen.DirectX.Capture.csproj">
+      <Project>{8c0015db-69e1-46e7-8705-3a4f8be2e5e7}</Project>
+      <Name>Tarsier.ShareScreen.DirectX.Capture</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

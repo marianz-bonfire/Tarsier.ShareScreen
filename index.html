@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stream Grid Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="p-4 max-w-7xl mx-auto">
+        <h1 class="text-xl font-semibold mb-4">Multi Stream Viewer</h1>
+
+        <div class="flex gap-2 mb-4">
+            <input id="urlInput" type="text" placeholder="http://IP:PORT" class="flex-1 px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none" />
+            <button onclick="addStream()" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700">Add</button>
+        </div>
+
+        <div id="grid" class="grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"></div>
+    </div>
+
+    <script>
+        function addStream() {
+        const input = document.getElementById('urlInput');
+        const url = input.value.trim();
+        if (!url) return;
+
+        const grid = document.getElementById('grid');
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'relative bg-black rounded overflow-hidden';
+
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'w-full h-40 object-contain bg-black';
+
+        img.onerror = () => {
+        wrapper.innerHTML = '<div class="flex items-center justify-center h-40 text-gray-400 text-sm">Waiting / Unreachable</div>';
+        };
+
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '✕';
+        removeBtn.className = 'absolute top-1 right-1 bg-black/60 px-2 py-1 text-xs rounded hover:bg-red-600';
+        removeBtn.onclick = () => wrapper.remove();
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+
+        grid.appendChild(wrapper);
+
+        input.value = '';
+        }
+
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') addStream();
+        });
+    </script>
+</body>
+</html>

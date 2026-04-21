@@ -36,6 +36,13 @@ namespace Tarsier.ShareScreen.Core.Server
         }
 
         /// <summary>
+        /// Initializes the fields and properties of the class for a specific monitor.
+        /// </summary>
+        private StreamingServer(int screenIndex, ScreenResolution imageResolution, Fps fps, bool showCursor)
+            : this(Screenshot.MonitorScreen(screenIndex, imageResolution, showCursor), fps) {
+        }
+
+        /// <summary>
         /// Initializes the fields and properties of the class to stream a specific application window.
         /// </summary>
         private StreamingServer(string applicationName, Fps fps, bool showCursor)
@@ -43,10 +50,10 @@ namespace Tarsier.ShareScreen.Core.Server
         }
 
         /// <summary>
-        /// Initializes the fields and properties of the class to stream a specific application window.
+        /// Initializes the fields and properties of the class to stream a webcam.
         /// </summary>
-        private StreamingServer(Fps fps)
-            : this(Screenshot.WebCamera(), fps) {
+        private StreamingServer(Fps fps, string deviceMonikerString)
+            : this(Screenshot.WebCamera(deviceMonikerString), fps) {
         }
 
         /// <summary>
@@ -63,10 +70,6 @@ namespace Tarsier.ShareScreen.Core.Server
         /// <summary>
         /// Provides a server object for a screen stream.
         /// </summary>
-        /// <param name="resolutions">Stream Resolution.</param>
-        /// <param name="fps">FPS.</param>
-        /// <param name="showCursor">Whether to display the cursor in screenshots.</param>
-        /// <returns>The object of the StreamingServer class.</returns>
         public static StreamingServer GetInstance(ScreenResolution resolutions, Fps fps, bool showCursor) {
             lock (SyncRoot) {
                 if (_serverInstance == null) {
@@ -78,12 +81,22 @@ namespace Tarsier.ShareScreen.Core.Server
         }
 
         /// <summary>
+        /// Provides a server object for a specific monitor.
+        /// </summary>
+        /// <param name="screenIndex">Zero-based monitor index.</param>
+        public static StreamingServer GetInstance(int screenIndex, ScreenResolution resolutions, Fps fps, bool showCursor) {
+            lock (SyncRoot) {
+                if (_serverInstance == null) {
+                    _serverInstance = new StreamingServer(screenIndex, resolutions, fps, showCursor);
+                }
+            }
+
+            return _serverInstance;
+        }
+
+        /// <summary>
         /// Provides an object for a window stream of a specific application.
         /// </summary>
-        /// <param name="applicationName">The title of the main application window.</param>
-        /// <param name="fps">FPS.</param>
-        /// <param name="showCursor">Whether to display the cursor in screenshots.</param>
-        /// <returns>The object of the StreamingServer class.</returns>
         public static StreamingServer GetInstance(string applicationName, Fps fps, bool showCursor) {
             lock (SyncRoot) {
                 if (_serverInstance == null) {
@@ -95,14 +108,14 @@ namespace Tarsier.ShareScreen.Core.Server
         }
 
         /// <summary>
-        /// Provides an object for a window stream of a specific application.
+        /// Provides an object for webcam streaming.
         /// </summary>
         /// <param name="fps">FPS.</param>
-        /// <returns>The object of the StreamingServer class.</returns>
-        public static StreamingServer GetInstance(Fps fps) {
+        /// <param name="deviceMonikerString">Webcam device moniker string, or null for default.</param>
+        public static StreamingServer GetInstance(Fps fps, string deviceMonikerString = null) {
             lock (SyncRoot) {
                 if (_serverInstance == null) {
-                    _serverInstance = new StreamingServer(fps);
+                    _serverInstance = new StreamingServer(fps, deviceMonikerString);
                 }
             }
 
@@ -131,16 +144,43 @@ namespace Tarsier.ShareScreen.Core.Server
         /// </summary>
         public void Stop() {
             if (!IsRunning) {
+                lock (SyncRoot) {
+                    _serverInstance = null;
+                }
                 return;
             }
 
             try {
                 _serverSocket.Shutdown(SocketShutdown.Both);
             } catch {
-                _serverSocket.Close();
+                // ignored
             } finally {
+                try { _serverSocket.Close(); } catch { }
+
+                lock (Clients) {
+                    foreach (var client in Clients.ToArray()) {
+                        try { client.Shutdown(SocketShutdown.Both); } catch { }
+                        try { client.Close(); } catch { }
+                    }
+                    Clients.Clear();
+                }
+
                 _thread = null;
                 _images = null;
+                lock (SyncRoot) {
+                    _serverInstance = null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Resets the singleton instance so a new source can be configured.
+        /// </summary>
+        public static void ResetInstance() {
+            lock (SyncRoot) {
+                if (_serverInstance != null) {
+                    _serverInstance.Stop();
+                }
                 _serverInstance = null;
             }
         }
